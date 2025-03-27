@@ -26,9 +26,17 @@
                 <div class="cart-items-summary">
                     <!-- Cart items will be displayed here -->
                 </div>
+                <div class="coupon-section">
+                    <div class="form-group">
+                        <input type="text" id="coupon-code" placeholder="Enter Coupon Code">
+                        <button id="apply-coupon" class="secondary-btn">Apply</button>
+                    </div>
+                    <div id="coupon-message"></div>
+                </div>
                 <div class="total-summary">
                     <p>Subtotal: $<span id="subtotal">0.00</span></p>
                     <p>Shipping: $<span id="shipping">5.00</span></p>
+                    <p class="discount-row" style="display: none">Discount: -$<span id="discount">0.00</span></p>
                     <p class="total">Total: $<span id="total-amount">0.00</span></p>
                 </div>
             </div>

@@ -14,6 +14,11 @@
                 <div class="logo-image"></div>
                 <div class="logo-text">ShopNow</div>
             </div>
+            <button class="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <div class="nav-items">
                 <a href="#home">Home</a>
                 <a href="#products">Products</a>
@@ -44,8 +49,39 @@
 
         <section id="products" class="products">
             <h2>Our Products</h2>
+            <div class="product-controls">
+                <div class="search-bar">
+                    <input type="text" id="product-search" placeholder="Search products...">
+                </div>
+                <div class="filter-controls">
+                    <select id="category-filter">
+                        <option value="">All Categories</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="books">Books</option>
+                        <option value="home">Home & Living</option>
+                    </select>
+                    <select id="price-filter">
+                        <option value="">Price Range</option>
+                        <option value="0-50">$0 - $50</option>
+                        <option value="51-100">$51 - $100</option>
+                        <option value="101-200">$101 - $200</option>
+                        <option value="201+">$201+</option>
+                    </select>
+                    <select id="sort-filter">
+                        <option value="default">Sort By</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="name-asc">Name: A to Z</option>
+                        <option value="name-desc">Name: Z to A</option>
+                    </select>
+                </div>
+            </div>
             <div class="product-grid">
                 <!-- Products will be dynamically added here -->
+            </div>
+            <div id="load-more" class="load-more-container">
+                <button class="load-more-btn">Load More Products</button>
             </div>
         </section>
 

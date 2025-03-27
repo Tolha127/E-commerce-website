@@ -27,34 +27,265 @@ const baseCardPaymentMethod = {
 };
 
 // Initialize page
-document.addEventListener('DOMContentLoaded', () => {
-    displayOrderSummary();
-    initializeGooglePay();
-    setupFormValidation();
+document.addEventListener('DOMContentLoaded', async () => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (!cart.length) {
+        window.location.href = 'cart.html';
+        return;
+    }
+
+    displayCartItems();
+    setupCouponForm();
+    setupCheckoutForm();
 });
 
-// Display order summary
+async function displayCartItems() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const itemsContainer = document.getElementById('order-items');
+    let subtotal = 0;
+
+    for (const item of cart) {
+        const response = await fetch(`/api/products/${item.productId}`);
+        const product = await response.json();
+        
+        const itemPrice = item.variantId 
+            ? product.variants.find(v => v._id === item.variantId).price 
+            : product.price;
+        
+        const itemTotal = itemPrice * item.quantity;
+        subtotal += itemTotal;
+
+        const itemElement = document.createElement('div');
+        itemElement.className = 'order-item';
+        itemElement.innerHTML = `
+            <div>
+                <strong>${product.name}</strong>
+                ${item.variantId ? `
+                    <span class="variant-details">
+                        (${product.variants.find(v => v._id === item.variantId).name})
+                    </span>
+                ` : ''}
+                <br>
+                <small>Quantity: ${item.quantity}</small>
+            </div>
+            <div>$${itemTotal.toFixed(2)}</div>
+        `;
+        itemsContainer.appendChild(itemElement);
+    }
+
+    updateOrderSummary(subtotal);
+}
+
+function setupCouponForm() {
+    const couponForm = document.getElementById('coupon-form');
+    const couponInput = document.getElementById('coupon-code');
+    const couponMessage = document.getElementById('coupon-message');
+
+    couponForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = couponInput.value.trim();
+        if (!code) return;
+
+        try {
+            const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+            const response = await fetch('/api/coupons/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ code, subtotal })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                couponMessage.innerHTML = `<span class="success">Coupon applied: ${
+                    result.coupon.discountType === 'percentage' 
+                        ? `${result.coupon.discountAmount}% off` 
+                        : `$${result.coupon.discountAmount} off`
+                }</span>`;
+                localStorage.setItem('appliedCoupon', code);
+                updateOrderSummary(subtotal, result.discountAmount);
+            } else {
+                couponMessage.innerHTML = `<span class="error">${result.message}</span>`;
+                localStorage.removeItem('appliedCoupon');
+                updateOrderSummary(subtotal);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            couponMessage.innerHTML = '<span class="error">Failed to apply coupon</span>';
+        }
+    });
+}
+
+function updateOrderSummary(subtotal, discount = 0) {
+    const shippingCost = calculateShipping(subtotal);
+    const total = subtotal + shippingCost - discount;
+
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('shipping').textContent = shippingCost.toFixed(2);
+    
+    const discountRow = document.getElementById('discount-row');
+    if (discount > 0) {
+        discountRow.style.display = 'flex';
+        document.getElementById('discount').textContent = discount.toFixed(2);
+    } else {
+        discountRow.style.display = 'none';
+    }
+    
+    document.getElementById('total').textContent = total.toFixed(2);
+}
+
+function calculateShipping(subtotal) {
+    // Example shipping calculation
+    return subtotal >= 50 ? 0 : 5.99;
+}
+
+function setupCheckoutForm() {
+    const checkoutForm = document.getElementById('checkout-form');
+    
+    checkoutForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(checkoutForm);
+        const shippingAddress = {
+            name: formData.get('name'),
+            street: formData.get('street'),
+            city: formData.get('city'),
+            state: formData.get('state'),
+            zip: formData.get('zip'),
+            country: formData.get('country')
+        };
+
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+        const shipping = parseFloat(document.getElementById('shipping').textContent);
+        const couponCode = localStorage.getItem('appliedCoupon');
+
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    items: cart.map(item => ({
+                        productId: item.productId,
+                        variantId: item.variantId,
+                        quantity: item.quantity
+                    })),
+                    shipping: {
+                        address: shippingAddress,
+                        cost: shipping
+                    },
+                    subtotal,
+                    coupon: couponCode
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create order');
+            }
+
+            const order = await response.json();
+            
+            // Clear cart and coupon
+            localStorage.removeItem('cart');
+            localStorage.removeItem('appliedCoupon');
+            
+            // Redirect to order confirmation page
+            window.location.href = `order-confirmation.html?id=${order._id}`;
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to process your order. Please try again.');
+        }
+    });
+}
+
+// Display order summary with variants
 function displayOrderSummary() {
     const cartItemsContainer = document.querySelector('.cart-items-summary');
     cartItemsContainer.innerHTML = cart.map(item => `
         <div class="summary-item">
-            <span>${item.name} x ${item.quantity}</span>
-            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+            <div class="item-details">
+                <span>${item.name}</span>
+                ${item.variant ? `
+                    <small class="variant-details">
+                        ${Object.entries(item.variant.attributes)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(', ')}
+                    </small>
+                ` : ''}
+                <span class="quantity">x ${item.quantity}</span>
+            </div>
+            <span>$${((item.variant ? item.variant.price : item.price) * item.quantity).toFixed(2)}</span>
         </div>
     `).join('');
 
     updateTotals();
 }
 
-// Update totals
+// Update totals with discount
 function updateTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = calculateSubtotal();
     const shipping = 5.00;
-    const total = subtotal + shipping;
+    let discount = 0;
+
+    if (appliedCoupon) {
+        if (appliedCoupon.discountType === 'percentage') {
+            discount = subtotal * (appliedCoupon.discountAmount / 100);
+        } else {
+            discount = appliedCoupon.discountAmount;
+        }
+    }
+
+    const total = subtotal + shipping - discount;
 
     document.getElementById('subtotal').textContent = subtotal.toFixed(2);
     document.getElementById('shipping').textContent = shipping.toFixed(2);
+    if (discount > 0) {
+        document.getElementById('discount').textContent = discount.toFixed(2);
+        document.querySelector('.discount-row').style.display = 'flex';
+    }
     document.getElementById('total-amount').textContent = total.toFixed(2);
+}
+
+function calculateSubtotal() {
+    return cart.reduce((sum, item) => {
+        const price = item.variant ? item.variant.price : item.price;
+        return sum + (price * item.quantity);
+    }, 0);
+}
+
+// Coupon handling
+let appliedCoupon = null;
+
+async function applyCoupon(code) {
+    try {
+        const response = await fetch(`${API_URL}/coupons/validate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ code, subtotal: calculateSubtotal() })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            appliedCoupon = data.coupon;
+            document.querySelector('.discount-row').style.display = 'flex';
+            document.getElementById('discount').textContent = data.discountAmount.toFixed(2);
+            document.getElementById('coupon-message').innerHTML = `<span class="success">Coupon applied successfully!</span>`;
+            updateTotals();
+        } else {
+            document.getElementById('coupon-message').innerHTML = `<span class="error">${data.message}</span>`;
+        }
+    } catch (err) {
+        document.getElementById('coupon-message').innerHTML = `<span class="error">Error applying coupon</span>`;
+    }
 }
 
 // Initialize Google Pay

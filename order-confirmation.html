@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo-container">
+            <div class="logo-image"></div>
+            <span class="logo-text">Your Store</span>
+        </div>
+        <div class="nav-items">
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="cart.html">Cart</a>
+            <div id="auth-section"></div>
+        </div>
+    </nav>
+
+    <div class="confirmation-page">
+        <div class="confirmation-container">
+            <div class="confirmation-header">
+                <h1>Thank You for Your Order!</h1>
+                <p>Order #<span id="order-number"></span></p>
+            </div>
+
+            <div class="status-tracker">
+                <div class="status-step" data-status="pending">
+                    <div class="step-icon">1</div>
+                    <span class="step-label">Pending</span>
+                </div>
+                <div class="status-line"></div>
+                <div class="status-step" data-status="processing">
+                    <div class="step-icon">2</div>
+                    <span class="step-label">Processing</span>
+                </div>
+                <div class="status-line"></div>
+                <div class="status-step" data-status="shipped">
+                    <div class="step-icon">3</div>
+                    <span class="step-label">Shipped</span>
+                </div>
+                <div class="status-line"></div>
+                <div class="status-step" data-status="delivered">
+                    <div class="step-icon">4</div>
+                    <span class="step-label">Delivered</span>
+                </div>
+            </div>
+
+            <div class="confirmation-details">
+                <div class="details-section">
+                    <h3>Shipping Address</h3>
+                    <div id="shipping-address"></div>
+                </div>
+
+                <div class="details-section">
+                    <h3>Order Items</h3>
+                    <div id="order-items"></div>
+                    <div class="order-totals">
+                        <div>
+                            <span>Subtotal:</span>
+                            <span>$<span id="subtotal">0.00</span></span>
+                        </div>
+                        <div>
+                            <span>Shipping:</span>
+                            <span>$<span id="shipping">0.00</span></span>
+                        </div>
+                        <div id="discount-row" style="display: none">
+                            <span>Discount:</span>
+                            <span>-$<span id="discount">0.00</span></span>
+                        </div>
+                        <div class="total-row">
+                            <span>Total:</span>
+                            <span>$<span id="total">0.00</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tracking-info" style="display: none">
+                <h3>Tracking Information</h3>
+                <p>Carrier: <span id="carrier"></span></p>
+                <p>Tracking Number: <span id="tracking-number"></span></p>
+                <a href="#" id="track-shipment" class="track-btn" target="_blank">Track Shipment</a>
+            </div>
+
+            <div class="confirmation-actions">
+                <a href="index.html" class="continue-shopping">Continue Shopping</a>
+                <a href="profile.html#orders" class="view-orders">View All Orders</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Your Store. All rights reserved.</p>
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/order-confirmation.js"></script>
+</body>
+</html>

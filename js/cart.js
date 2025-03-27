@@ -1,200 +1,223 @@
 // Check authentication
 window.auth.requireAuth();
 
-// Load cart from user session
-let cart = window.auth.getCurrentUser().cart || [];
+// Global variables
+let cart = [];
+let products = [];
 
-// Google Pay client configuration
-const baseRequest = {
-    apiVersion: 2,
-    apiVersionMinor: 0
-};
+// Initialize page
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadCart();
+    setupEventListeners();
+    initializeGooglePay();
+});
 
-const allowedCardNetworks = ["AMEX", "DISCOVER", "MASTERCARD", "VISA"];
-const allowedCardAuthMethods = ["PAN_ONLY", "CRYPTOGRAM_3DS"];
+// Load cart from API
+async function loadCart() {
+    try {
+        const user = await window.auth.apiCall('/auth/me');
+        cart = user.cart;
 
-const tokenizationSpecification = {
-    type: 'PAYMENT_GATEWAY',
-    parameters: {
-        'gateway': 'example',
-        'gatewayMerchantId': 'exampleGatewayMerchantId'
-    }
-};
+        // Fetch product details for cart items
+        const productIds = cart.map(item => item.productId);
+        products = await Promise.all(
+            productIds.map(id => window.auth.apiCall(`/products/${id}`))
+        );
 
-const baseCardPaymentMethod = {
-    type: 'CARD',
-    parameters: {
-        allowedAuthMethods: allowedCardAuthMethods,
-        allowedCardNetworks: allowedCardNetworks
-    }
-};
-
-const merchantInfo = {
-    merchantName: 'ShopNow',
-    merchantId: '12345678901234567890'
-};
-
-// Initialize Google Pay button
-function initializeGooglePay() {
-    const paymentsClient = new google.payments.api.PaymentsClient({
-        environment: 'TEST'
-    });
-
-    const isReadyToPayRequest = Object.assign({}, baseRequest);
-    isReadyToPayRequest.allowedPaymentMethods = [baseCardPaymentMethod];
-
-    paymentsClient.isReadyToPay(isReadyToPayRequest)
-        .then(function(response) {
-            if (response.result) {
-                createAndAddButton(paymentsClient);
-            }
-        })
-        .catch(function(err) {
-            console.error(err);
-        });
-}
-
-function createAndAddButton(paymentsClient) {
-    const button = paymentsClient.createButton({
-        onClick: onGooglePaymentButtonClicked
-    });
-    document.getElementById('google-pay-button').appendChild(button);
-}
-
-function getGooglePaymentDataRequest() {
-    const total = calculateTotal();
-    const paymentDataRequest = Object.assign({}, baseRequest);
-    paymentDataRequest.allowedPaymentMethods = [baseCardPaymentMethod];
-    paymentDataRequest.transactionInfo = {
-        totalPriceStatus: 'FINAL',
-        totalPrice: total.toString(),
-        currencyCode: 'USD',
-        countryCode: 'US'
-    };
-    paymentDataRequest.merchantInfo = merchantInfo;
-    return paymentDataRequest;
-}
-
-function onGooglePaymentButtonClicked() {
-    const paymentsClient = new google.payments.api.PaymentsClient({
-        environment: 'TEST'
-    });
-    const paymentDataRequest = getGooglePaymentDataRequest();
-    paymentsClient.loadPaymentData(paymentDataRequest)
-        .then(function(paymentData) {
-            processPayment(paymentData);
-        })
-        .catch(function(err) {
-            console.error(err);
-        });
-}
-
-// Process payment
-function processPayment(paymentData) {
-    const currentUser = window.auth.getCurrentUser();
-    const users = JSON.parse(localStorage.getItem('users'));
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-
-    if (userIndex !== -1) {
-        // Create order record
-        const order = {
-            id: Date.now().toString(),
-            items: cart,
-            total: calculateTotal(),
-            date: new Date(),
-            status: 'Pending',
-            payment: paymentData
-        };
-
-        // Add order to user's history
-        if (!users[userIndex].orders) {
-            users[userIndex].orders = [];
-        }
-        users[userIndex].orders.push(order);
-
-        // Clear cart
-        users[userIndex].cart = [];
-        localStorage.setItem('users', JSON.stringify(users));
-        window.auth.updateUserCart([]);
-
-        // Redirect to success page
-        window.location.href = 'order-success.html';
+        displayCart();
+        updateTotals();
+    } catch (err) {
+        console.error('Error loading cart:', err);
+        showError('Error loading cart. Please try again later.');
     }
 }
 
 // Display cart items
 function displayCart() {
-    const cartItemsContainer = document.querySelector('.cart-items');
-    if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p>Your cart is empty</p>';
+    const cartItems = document.querySelector('.cart-items');
+    if (!cart.length) {
+        cartItems.innerHTML = '<p class="empty-cart">Your cart is empty</p>';
         return;
     }
 
-    cartItemsContainer.innerHTML = cart.map(item => `
-        <div class="cart-item">
-            <div>
-                <h4>${item.name}</h4>
-                <p>$${item.price.toFixed(2)} x ${item.quantity}</p>
+    cartItems.innerHTML = cart.map(item => {
+        const product = products.find(p => p._id === item.productId);
+        if (!product) return '';
+
+        return `
+            <div class="cart-item" data-id="${product._id}">
+                <img src="${product.images[0]}" alt="${product.name}">
+                <div class="item-details">
+                    <h3>${product.name}</h3>
+                    <p class="price">$${product.price.toFixed(2)}</p>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn minus" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button class="quantity-btn plus" ${item.quantity >= product.stock ? 'disabled' : ''}>+</button>
+                    </div>
+                </div>
+                <button class="remove-item">×</button>
             </div>
-            <div>
-                <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
-                <span>${item.quantity}</span>
-                <button onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
-                <button onclick="removeFromCart(${item.id})">Remove</button>
-            </div>
-        </div>
-    `).join('');
-
-    updateTotal();
+        `;
+    }).join('');
 }
 
-// Update item quantity
-function updateQuantity(productId, newQuantity) {
-    if (newQuantity < 1) {
-        removeFromCart(productId);
-        return;
-    }
+// Update cart totals
+function updateTotals() {
+    const subtotal = cart.reduce((sum, item) => {
+        const product = products.find(p => p._id === item.productId);
+        return sum + (product ? product.price * item.quantity : 0);
+    }, 0);
 
-    const item = cart.find(item => item.id === productId);
-    if (item) {
-        item.quantity = newQuantity;
-        window.auth.updateUserCart(cart);
-        displayCart();
-    }
-}
+    const shipping = subtotal > 50 ? 0 : 5.99;
+    const tax = subtotal * 0.08; // 8% tax
+    const total = subtotal + shipping + tax;
 
-// Remove from cart
-function removeFromCart(productId) {
-    cart = cart.filter(item => item.id !== productId);
-    window.auth.updateUserCart(cart);
-    displayCart();
-}
-
-// Calculate total
-function calculateTotal() {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-}
-
-// Update total display
-function updateTotal() {
-    const total = calculateTotal();
+    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+    document.getElementById('shipping').textContent = `$${shipping.toFixed(2)}`;
+    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
     document.getElementById('total-amount').textContent = total.toFixed(2);
+}
+
+// Update cart quantity
+async function updateQuantity(productId, delta) {
+    const item = cart.find(item => item.productId === productId);
+    if (!item) return;
+
+    const product = products.find(p => p._id === productId);
+    if (!product) return;
+
+    const newQuantity = item.quantity + delta;
+    if (newQuantity < 1 || newQuantity > product.stock) return;
+
+    item.quantity = newQuantity;
+    
+    try {
+        await window.auth.updateUserCart(cart);
+        displayCart();
+        updateTotals();
+    } catch (err) {
+        console.error('Error updating cart:', err);
+        showError('Error updating cart. Please try again.');
+    }
+}
+
+// Remove item from cart
+async function removeItem(productId) {
+    cart = cart.filter(item => item.productId !== productId);
+    
+    try {
+        await window.auth.updateUserCart(cart);
+        displayCart();
+        updateTotals();
+    } catch (err) {
+        console.error('Error updating cart:', err);
+        showError('Error removing item. Please try again.');
+    }
 }
 
 // Setup event listeners
 function setupEventListeners() {
-    document.querySelector('.checkout-btn').addEventListener('click', () => {
+    const cartItems = document.querySelector('.cart-items');
+    
+    cartItems.addEventListener('click', async (e) => {
+        const cartItem = e.target.closest('.cart-item');
+        if (!cartItem) return;
+
+        const productId = cartItem.dataset.id;
+
+        if (e.target.classList.contains('minus')) {
+            await updateQuantity(productId, -1);
+        } else if (e.target.classList.contains('plus')) {
+            await updateQuantity(productId, 1);
+        } else if (e.target.classList.contains('remove-item')) {
+            await removeItem(productId);
+        }
+    });
+
+    // Regular checkout button
+    const checkoutBtn = document.querySelector('.checkout-btn');
+    checkoutBtn.addEventListener('click', () => {
         if (cart.length === 0) {
-            alert('Your cart is empty!');
+            showError('Your cart is empty');
             return;
         }
-        window.open('checkout.html', '_blank');
+        window.location.href = 'checkout.html';
     });
 }
 
-// Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
-    displayCart();
-    initializeGooglePay();
-    setupEventListeners();
-});
+// Initialize Google Pay
+function initializeGooglePay() {
+    const googlePayBtn = document.getElementById('google-pay-button');
+    if (!googlePayBtn) return;
+
+    const paymentClient = new google.payments.api.PaymentsClient({
+        environment: 'TEST' // Change to 'PRODUCTION' for live environment
+    });
+
+    const button = paymentClient.createButton({
+        onClick: processGooglePayment,
+        buttonColor: 'black' // 'default' | 'black' | 'white'
+    });
+
+    googlePayBtn.appendChild(button);
+}
+
+// Process Google Pay payment
+async function processGooglePayment() {
+    if (cart.length === 0) {
+        showError('Your cart is empty');
+        return;
+    }
+
+    const total = cart.reduce((sum, item) => {
+        const product = products.find(p => p._id === item.productId);
+        return sum + (product ? product.price * item.quantity : 0);
+    }, 0);
+
+    try {
+        // Here you would integrate with your payment processor
+        // For demo, we'll just show a success message
+        await processOrder('google_pay');
+        showSuccess('Payment successful! Order confirmed.');
+        cart = [];
+        await window.auth.updateUserCart(cart);
+        displayCart();
+        updateTotals();
+    } catch (err) {
+        console.error('Payment failed:', err);
+        showError('Payment failed. Please try again.');
+    }
+}
+
+// Process order
+async function processOrder(paymentMethod) {
+    try {
+        const orderData = {
+            items: cart.map(item => ({
+                product: item.productId,
+                quantity: item.quantity,
+                price: products.find(p => p._id === item.productId).price
+            })),
+            shippingAddress: JSON.parse(localStorage.getItem('shippingAddress')),
+            paymentInfo: {
+                method: paymentMethod,
+                status: 'completed'
+            }
+        };
+
+        await window.auth.apiCall('/orders', 'POST', orderData);
+    } catch (err) {
+        console.error('Error processing order:', err);
+        throw new Error('Order processing failed');
+    }
+}
+
+// Show error message
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+}

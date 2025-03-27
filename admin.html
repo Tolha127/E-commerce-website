@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ShopNow</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo-container">
+                <div class="logo-image"></div>
+                <div class="logo-text">ShopNow Admin</div>
+            </div>
+            <div class="nav-items">
+                <a href="index.html">View Store</a>
+                <button id="logout-btn" class="logout-btn">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="admin-page">
+        <div class="admin-container">
+            <div class="admin-sidebar">
+                <nav>
+                    <a href="#products" class="active">Products</a>
+                    <a href="#orders">Orders</a>
+                    <a href="#users">Users</a>
+                    <a href="#settings">Settings</a>
+                </nav>
+            </div>
+            
+            <div class="admin-content">
+                <section id="products" class="admin-section">
+                    <div class="section-header">
+                        <h2>Product Management</h2>
+                        <button class="add-product-btn">Add New Product</button>
+                    </div>
+
+                    <div class="product-list">
+                        <!-- Products will be listed here -->
+                    </div>
+
+                    <!-- Add/Edit Product Modal -->
+                    <div class="modal" id="productModal">
+                        <div class="modal-content">
+                            <h3>Add/Edit Product</h3>
+                            <form id="productForm" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <label for="productName">Product Name</label>
+                                    <input type="text" id="productName" name="name" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="productDescription">Description</label>
+                                    <textarea id="productDescription" name="description" required></textarea>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="productPrice">Price ($)</label>
+                                        <input type="number" id="productPrice" name="price" step="0.01" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="productStock">Stock</label>
+                                        <input type="number" id="productStock" name="stock" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="productCategory">Category</label>
+                                    <select id="productCategory" name="category" required>
+                                        <option value="electronics">Electronics</option>
+                                        <option value="clothing">Clothing</option>
+                                        <option value="books">Books</option>
+                                        <option value="home">Home & Living</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="productImages">Product Images</label>
+                                    <input type="file" id="productImages" name="images" multiple accept="image/*">
+                                    <div class="image-preview"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Product Status</label>
+                                    <div class="status-options">
+                                        <label>
+                                            <input type="radio" name="status" value="active" checked>
+                                            Active
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="status" value="draft">
+                                            Draft
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="button-group">
+                                    <button type="submit" class="save-btn">Save Product</button>
+                                    <button type="button" class="cancel-btn">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 ShopNow Admin Panel. All rights reserved.</p>
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
