@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Store</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://pay.google.com/gp/p/js/pay.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo-container">
+                <div class="logo-image"></div>
+                <div class="logo-text">ShopNow</div>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-items">
+                <a href="#home">Home</a>
+                <a href="#products">Products</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+                <div class="nav-user">
+                    <span id="user-name"></span>
+                    <a href="profile.html" id="profile-link" style="display: none;">My Profile</a>
+                    <a href="login.html" id="login-link">Login</a>
+                    <a href="register.html" id="register-link">Register</a>
+                    <button id="logout-btn" class="logout-btn" style="display: none;">Logout</button>
+                </div>
+            </div>
+            <div class="cart-icon" role="button" tabindex="0" aria-label="Shopping cart">
+                <span class="cart-count" aria-live="polite">0</span>
+                🛒
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="hero-content">
+                <h1>Welcome to ShopNow</h1>
+                <p>Discover amazing products at great prices</p>
+            </div>
+        </section>
+
+        <section id="products" class="products">
+            <h2>Our Products</h2>
+            <div class="product-controls">
+                <div class="search-bar">
+                    <input type="text" id="product-search" placeholder="Search products...">
+                </div>
+                <div class="filter-controls">
+                    <select id="category-filter">
+                        <option value="">All Categories</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="books">Books</option>
+                        <option value="home">Home & Living</option>
+                    </select>
+                    <select id="price-filter">
+                        <option value="">Price Range</option>
+                        <option value="0-50">$0 - $50</option>
+                        <option value="51-100">$51 - $100</option>
+                        <option value="101-200">$101 - $200</option>
+                        <option value="201+">$201+</option>
+                    </select>
+                    <select id="sort-filter">
+                        <option value="default">Sort By</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="name-asc">Name: A to Z</option>
+                        <option value="name-desc">Name: Z to A</option>
+                    </select>
+                </div>
+            </div>
+            <div class="product-grid">
+                <!-- Products will be dynamically added here -->
+            </div>
+            <div id="load-more" class="load-more-container">
+                <button class="load-more-btn">Load More Products</button>
+            </div>
+        </section>
+
+        <section id="about" class="about">
+            <div class="about-content">
+                <h2>About Us</h2>
+                <p>We are dedicated to providing high-quality products at competitive prices.</p>
+            </div>
+        </section>
+
+        <section id="contact" class="contact">
+            <div class="contact-content">
+                <h2>Contact Us</h2>
+                <div class="contact-info">
+                    <p>Email: tolhanajmudeen2006@gmail.com</p>
+                    <p>Phone: +234(0)9127813223</p>
+                    <p>Address: no 64, Road2 Ifesowapo Community Along Ikire Ile Road, Iwo.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 ShopNow. All rights reserved.</p>
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
