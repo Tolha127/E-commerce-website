@@ -2,10 +2,17 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './src/js/index.js',
-  output: {
+  entry: {
+    main: './src/js/script.js',
+    auth: './src/js/auth.js',
+    cart: './src/js/cart.js',
+    checkout: './src/js/checkout.js',
+    orderConfirmation: './src/js/order-confirmation.js',
+    profile: './src/js/profile.js',
+    admin: './src/js/admin.js'
+  },  output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: '[name].bundle.js',
     clean: true
   },
   module: {
@@ -29,10 +36,38 @@ module.exports = {
         type: 'asset/resource'
       }
     ]
-  },
-  plugins: [
+  },  plugins: [
     new HtmlWebpackPlugin({
-      template: './src/index.html'
+      template: './src/pages/index.html',
+      filename: 'index.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/login.html',
+      filename: 'login.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/register.html',
+      filename: 'register.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/cart.html',
+      filename: 'cart.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/checkout.html',
+      filename: 'checkout.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/profile.html',
+      filename: 'profile.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/order-confirmation.html',
+      filename: 'order-confirmation.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/pages/admin.html',
+      filename: 'admin.html'
     })
   ],
   devServer: {

@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:5000/api';
+import config from './config.js';
+const API_URL = config.API_URL;
 
 // Check if user is logged in
 function isLoggedIn() {

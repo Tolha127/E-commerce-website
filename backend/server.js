@@ -7,8 +7,6 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const path = require('path');
 const multer = require('multer');
-const path = require('path');
-const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
@@ -55,28 +53,19 @@ const upload = multer({
     }
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shopnow', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB Connected'))
-.catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-});
+// Connect to MongoDB using the database config
+const connectDB = require('./src/config/database');
+connectDB();
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const authRoutes = require('./routes/auth');
-const orderRoutes = require('./routes/orders');
-const couponRoutes = require('./routes/coupons');
+const authRoutes = require('./src/routes/auth');
+const productRoutes = require('./src/routes/products');
+const orderRoutes = require('./src/routes/orders');
+const couponRoutes = require('./src/routes/coupons');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/coupons', couponRoutes);
 
